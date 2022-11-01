@@ -7,16 +7,47 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class TransactionController {
-    private static String path = "src/main/resources/logs/";
-    private static int data=0;
-    public static void main(String[] args) throws IOException{
+    private static String dir = System.getProperty("user.dir");
+    private static String path = "/src/main/resources/logs/";
+    private static int data = 0;
+
+    public static void main(String[] args) throws IOException {
+        
+        File dirpath = new File(path);
+		if(!dirpath.exists())
+			dirpath.mkdir();
         log(LogManager.START);
-        listen();
-        temp();
+        String lastLogOp = readlogOp();
+        System.out.println(lastLogOp);
+        switch (lastLogOp) {
+            case "":
+                listen();
+                temp();
+                break;
+            case "GET_LOCK":
+                temp();
+                break;
+            case "COMMIT_A":
+                docommit();
+                break;
+            case "COMMIT_ACK_A":
+                docommit();
+                break;
+            case "COMMIT_B":
+                docommit();
+                break;
+            case "COMMIT_ACK_B":
+                docommit();
+                break;
+            default:
+                listen();
+                temp();
+        }
+        deletefile();
     }
 
-    private static void listen() throws IOException{
-        Socket sock=null;
+    private static void listen() throws IOException {
+        Socket sock = null;
         try (ServerSocket servSock = new ServerSocket(2021)) {
             log(LogManager.START);
             System.out.println("[TC] started listening on 2021");
@@ -26,117 +57,128 @@ public class TransactionController {
             BufferedReader br = new BufferedReader(ip);
             String str = br.readLine();
             data = Integer.parseInt(str);
-       } finally {
+            sendDataGetLock(data);
+        }catch(Exception e){
+            System.out.println(e.toString());
+        } 
+        finally {
             sock.close();
+
         }
     }
 
     private static void temp() throws IOException {
-        sendDataGetLock(data);
-        System.out.println("DATA1:"+data);
-        int countPrep=sendPrepare();
-        System.out.println("prepare count:"+countPrep);
-        System.out.println("DATA2:"+data);
-        if(countPrep==2){
+        System.out.println("DATA1:" + data);
+        int countPrep = sendPrepare();
+        System.out.println("prepare count:" + countPrep);
+        System.out.println("DATA2:" + data);
+        if (countPrep == 2) {
 
-            int countCommit=sendCommit();
-            System.out.println("Commit count:"+countCommit);
+            int countCommit = sendCommit();
+            System.out.println("Commit count:" + countCommit);
 
-            if(countCommit==2){
-                data=data+1;
+            if (countCommit == 2) {
+                data = data + 1;
             }
-            System.out.println("DATA3:"+data);
+            System.out.println("DATA3:" + data);
 
         }
         sendresponse();
     }
-    private static void sendresponse() throws IOException{
-        //Send commit/abort value command to node A
-        try
-        
-         (Socket sock = new Socket("localhost", 2020)) {
-            log("Unlock");
-            PrintWriter pw = new PrintWriter(sock.getOutputStream(), true);
-            System.out.println("DATA FINAL::"+data);
-            pw.println(data);
-            }
-            
+
+    private static void docommit() throws IOException {
+
+        data = data + 1;
+        System.out.println("DATA3:" + data);
+
+        sendresponse();
     }
 
-    
+    private static void sendresponse() throws IOException {
+        // Send commit/abort value command to node A
+        try
 
-    private static void sendDataGetLock(int data) throws IOException{
+        (Socket sock = new Socket("localhost", 2020)) {
+            log("Unlock");
+            PrintWriter pw = new PrintWriter(sock.getOutputStream(), true);
+            System.out.println("DATA FINAL::" + data);
+            pw.println(data);
+        }
 
-        //write data to own log
+    }
+
+    private static void sendDataGetLock(int data) throws IOException {
+
+        // write data to own log
         log(LogManager.GET_LOCK);
-        //Send data to node A
+        // Send data to node A
         try (Socket sock = new Socket("localhost", 2022)) {
             PrintWriter pw = new PrintWriter(sock.getOutputStream(), true);
             pw.println(data);
         }
-        //Send data to node B
+        // Send data to node B
         try (Socket sock = new Socket("localhost", 2023)) {
             PrintWriter pw = new PrintWriter(sock.getOutputStream(), true);
             pw.println(data);
         }
     }
 
-    private static int sendPrepare() throws IOException{
+    private static int sendPrepare() throws IOException {
 
-        int count=0;
-        //Send data to node A
-        count=count+NodeA("LogManager.PREPARE_A","LogManager.PREPARE_A_ACK");
-        //Send data to node B
-        count=count+NodeB("LogManager.PREPARE_B","LogManager.PREPARE_A_ACK");
+        int count = 0;
+        // Send data to node A
+        count = count + NodeA("LogManager.PREPARE_A", "LogManager.PREPARE_A_ACK");
+        // Send data to node B
+        count = count + NodeB("LogManager.PREPARE_B", "LogManager.PREPARE_A_ACK");
         return count;
     }
 
-    private static int sendCommit() throws IOException{
+    private static int sendCommit() throws IOException {
 
-        int count=0;
-        //Send data to node A
-        count=count+NodeA("LogManager.COMMIT_A","LogManager.COMMIT_A_ACK");
-        //Send data to node B
-        count=count+NodeB("LogManager.COMMIT_B","LogManager.COMMIT_B_ACK");
+        int count = 0;
+        // Send data to node A
+        count = count + NodeA("LogManager.COMMIT_A", "LogManager.COMMIT_A_ACK");
+        // Send data to node B
+        count = count + NodeB("LogManager.COMMIT_B", "LogManager.COMMIT_B_ACK");
         return count;
     }
 
-    private static int NodeA(String logop, String logack) throws IOException{
-        int count =0;
-        //Send data to node A
+    private static int NodeA(String logop, String logack) throws IOException {
+        int count = 0;
+        // Send data to node A
         try
-        
-         (Socket sock = new Socket("localhost", 2022)) {
+
+        (Socket sock = new Socket("localhost", 2022)) {
             log(logop);
             PrintWriter pw = new PrintWriter(sock.getOutputStream(), true);
             pw.println(logop);
-            }
-        //listen to node A for ack();
+        }
+        // listen to node A for ack();
         Socket sock = null;
-            try (ServerSocket servSock = new ServerSocket(2021)) {
-                sock = servSock.accept();
-                InputStreamReader ip = new InputStreamReader(sock.getInputStream());
-                BufferedReader br = new BufferedReader(ip);
-                log(logack);                ///add wait for some time to reproduce failure of a Node
-                count+=1;
-                System.out.println("COMMIT COUNTA::"+count);
-            }
-        catch(Exception e){
+        try (ServerSocket servSock = new ServerSocket(2021)) {
+            sock = servSock.accept();
+            InputStreamReader ip = new InputStreamReader(sock.getInputStream());
+            BufferedReader br = new BufferedReader(ip);
+            log(logack); /// add wait for some time to reproduce failure of a Node
+            count += 1;
+            System.out.println("COMMIT COUNTA::" + count);
+        } catch (Exception e) {
             return count;
-        }finally {
-                sock.close();
-            }
+        } finally {
+            sock.close();
+        }
         return count;
     }
-    private static int NodeB(String logop, String logack) throws IOException{
-        int count=0;
+
+    private static int NodeB(String logop, String logack) throws IOException {
+        int count = 0;
         try (Socket sock = new Socket("localhost", 2023)) {
             log(logop);
             PrintWriter pw = new PrintWriter(sock.getOutputStream(), true);
             pw.println(logop);
         }
         System.out.println("Noor chutia 1");
-        //listen to node B for ack();
+        // listen to node B for ack();
         Socket sock = null;
         try (ServerSocket servSock = new ServerSocket(2021)) {
             System.out.println("Noor chutia 2");
@@ -144,26 +186,51 @@ public class TransactionController {
             InputStreamReader ip = new InputStreamReader(sock.getInputStream());
             BufferedReader br = new BufferedReader(ip);
             log(logack);
-            System.out.println("COMMIT COUNTB::"+count);
-            count+=1;
-        }
-        catch(Exception e){
+            System.out.println("COMMIT COUNTB::" + count);
+            count += 1;
+        } catch (Exception e) {
             return count;
-        }finally {
+        } finally {
             sock.close();
         }
         return count;
     }
 
-
     private static void log(String op) {
-        try (FileWriter fw = new FileWriter(path + "TransactionController.txt", true);
-             BufferedWriter bw = new BufferedWriter(fw);
-             PrintWriter out = new PrintWriter(bw)) {
+        try (FileWriter fw = new FileWriter(dir+path + "TransactionController.txt", true);
+                BufferedWriter bw = new BufferedWriter(fw);
+                PrintWriter out = new PrintWriter(bw)) {
             out.println(op);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-    
+
+    private static String readlogOp() {
+        String lastOp = "";
+        try {
+            FileReader fr = new FileReader(dir+ path + "TransactionController.txt");
+            BufferedReader br = new BufferedReader(fr);
+
+            String line = "";
+            while ((line = br.readLine()) != null) {
+                lastOp = line;
+            }
+            br.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return lastOp;
+    }
+
+    private static void deletefile() {
+        File file=new File(dir+ path + "TransactionController.txt");
+        if(file.exists()){
+            return;
+        }
+        else{
+            file.delete();
+        }
+    }
+
 }
