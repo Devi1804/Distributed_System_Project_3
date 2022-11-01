@@ -18,7 +18,7 @@ public class TransactionController {
 
     public static void main(String[] args) throws IOException, InterruptedException {
 
-        File dirpath = new File(path);
+        File dirpath = new File(dir+path);
 		if(!dirpath.exists())
 			dirpath.mkdir();
         String lastLogOp = readlogOp();
@@ -29,6 +29,12 @@ public class TransactionController {
                 temp();
                 break;
             case "GET_LOCK":
+                temp();
+                break;
+            case "LogManager.PREPARE_A":
+                temp();
+                break;
+            case "LogManager.PREPARE_B":
                 temp();
                 break;
             case "COMMIT_A":
@@ -152,7 +158,7 @@ public class TransactionController {
             PrintWriter pw = new PrintWriter(sock.getOutputStream(), true);
             pw.println(logop);
         }catch (Exception e){
-            e.printStackTrace();
+            return 0;
         }
         // listen to node A for ack();
         Socket sock = null;
@@ -165,11 +171,8 @@ public class TransactionController {
             log(logack);
             count += 1;
         } catch (Exception e) {
-            e.printStackTrace();
             return count;
-        } finally {
-            sock.close();
-        }
+        } 
         return count;
     }
 
@@ -180,7 +183,7 @@ public class TransactionController {
             PrintWriter pw = new PrintWriter(sock.getOutputStream(), true);
             pw.println(logop);
         }catch (Exception e){
-            e.printStackTrace();
+            return 0;
         }
         // listen to node B for ack();
         Socket sock = null;
@@ -193,11 +196,8 @@ public class TransactionController {
             log(logack);
             count += 1;
         } catch (Exception e) {
-            e.printStackTrace();
             return count;
-        } finally {
-            sock.close();
-        }
+        } 
         return count;
     }
 
@@ -207,7 +207,6 @@ public class TransactionController {
                 PrintWriter out = new PrintWriter(bw)) {
             out.println(op);
         } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
@@ -223,18 +222,16 @@ public class TransactionController {
             }
             br.close();
         } catch (IOException e) {
-            e.printStackTrace();
         }
         return lastOp;
     }
 
-    private static void deletefile() {
+    private static void deletefile() throws IOException {
         File file=new File(dir+ path + "TransactionController.txt");
         if(file.exists()){
-            return;
-        }
-        else{
             file.delete();
+            file.createNewFile();
+            return;
         }
     }
 

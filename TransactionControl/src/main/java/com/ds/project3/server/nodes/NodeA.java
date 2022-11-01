@@ -36,37 +36,36 @@ public class NodeA {
     private static void listen() throws IOException, InterruptedException {
         Socket sock = null;
         System.out.println("[NODE_A] started listening on 2022");
-            try (ServerSocket servSock = new ServerSocket(2022)) {
-                sock = servSock.accept();
-                System.out.println("[TC] Connection Established!");
-                InputStreamReader ip = new InputStreamReader(sock.getInputStream());
-                BufferedReader br = new BufferedReader(ip);
-                String opcall = br.readLine();
+        try (ServerSocket servSock = new ServerSocket(2022)) {
+            sock = servSock.accept();
+            System.out.println("[TC] Connection Established!");
+            InputStreamReader ip = new InputStreamReader(sock.getInputStream());
+            BufferedReader br = new BufferedReader(ip);
+            String opcall = br.readLine();
+            sock.close();
+            System.out.println(opcall);
+            if (opcall.contains("LOCK")) {
                 sock.close();
-                System.out.println(opcall);
-                if (opcall.contains("LOCK")) {
-                    sock.close();
-                    log(LogManager.GET_LOCK);
-                    timestamp = new Timestamp(System.currentTimeMillis());
+                log(LogManager.GET_LOCK);
+                timestamp = new Timestamp(System.currentTimeMillis());
+            } else if (opcall.contains("PREPARE")) {
+                Timestamp ts = new Timestamp(System.currentTimeMillis());
+                long diff = ts.getTime() - timestamp.getTime();
+                if (diff <= allowedDelay) {
+                    log(LogManager.PREPARE_A);
+                    send(LogManager.PREPARE_A_ACK);
+                } else {
+                    // do nothing
                 }
-                else if (opcall.contains("PREPARE")) {
-                    Timestamp ts = new Timestamp(System.currentTimeMillis());
-                    long diff = ts.getTime() - timestamp.getTime();
-                    if(diff<=allowedDelay) {
-                        log(LogManager.PREPARE_A);
-                        send(LogManager.PREPARE_A_ACK);
-                    }else{
-                        //do nothing
-                    }
-                    sock.close();
-                } else if (opcall.contains("COMMIT")) {
-                    log(LogManager.COMMIT_B);
-                    send(LogManager.COMMIT_ACK_B);
-                    sock.close();
-                }
-            }finally {
+                sock.close();
+            } else if (opcall.contains("COMMIT")) {
+                log(LogManager.COMMIT_B);
+                send(LogManager.COMMIT_ACK_B);
                 sock.close();
             }
+        } finally {
+            sock.close();
+        }
     }
 
     private static void log(String op) {
