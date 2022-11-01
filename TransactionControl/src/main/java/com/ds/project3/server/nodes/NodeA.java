@@ -51,6 +51,7 @@ public class NodeA {
             } else if (opcall.contains("PREPARE")) {
                 Timestamp ts = new Timestamp(System.currentTimeMillis());
                 long diff = ts.getTime() - timestamp.getTime();
+                System.out.println("Time difference is: " + diff);
                 if (diff <= allowedDelay) {
                     log(LogManager.PREPARE_A);
                     send(LogManager.PREPARE_A_ACK);

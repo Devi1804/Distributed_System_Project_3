@@ -22,11 +22,11 @@ public class LogManager {
 
     public static String COMMIT_A = "COMMIT_A";
 
-    public static String COMMIT_ACK_A = "COMMIT_ACK_A";
+    public static String COMMIT_ACK_A = "COMMIT_A_ACK";
 
     public static String COMMIT_B = "COMMIT_B";
 
-    public static String COMMIT_ACK_B = "COMMIT_ACK_B";
+    public static String COMMIT_ACK_B = "COMMIT_B_ACK";
 
     public static String UNLOCK = "UNLOCK";
 

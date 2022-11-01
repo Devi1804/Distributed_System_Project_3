@@ -50,7 +50,6 @@ public class NodeB {
                 log(LogManager.GET_LOCK);
                 timestamp = new Timestamp(System.currentTimeMillis());
             } else if (opcall.contains("PREPARE")) {
-                // Thread.sleep(6000);
                 Timestamp ts = new Timestamp(System.currentTimeMillis());
                 long diff = ts.getTime() - timestamp.getTime();
                 System.out.println("Time difference is: " + diff);
@@ -58,7 +57,7 @@ public class NodeB {
                     log(LogManager.PREPARE_B);
                     send(LogManager.PREPARE_B_ACK);
                 } else {
-                    // wait for timeout of 7 secs and close connection
+                    // do nothing
                 }
                 sock.close();
             } else if (opcall.contains("COMMIT")) {
