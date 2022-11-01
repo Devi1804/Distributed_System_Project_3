@@ -1,4 +1,5 @@
 # Project3
+   Implementation of 2-phase distributed commit(2PC) protocol 
 
 ## Prerequisites:
    Minimum JDK 8
