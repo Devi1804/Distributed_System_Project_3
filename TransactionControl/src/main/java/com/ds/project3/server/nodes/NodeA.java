@@ -26,9 +26,9 @@ public class NodeA {
     }
 
     private static void listen() throws IOException {
+        Socket sock=null;
         try (ServerSocket servSock = new ServerSocket(2022)) {
             System.out.println("[NODE_A] started listening on 2022");
-            Socket sock;
             sock = servSock.accept();
             System.out.println("[TC] Connection Established!");
             InputStreamReader ip = new InputStreamReader(sock.getInputStream());
@@ -45,6 +45,8 @@ public class NodeA {
                 log(LogManager.COMMIT_A);
                 send(LogManager.COMMIT_ACK_A);
             }
+        }finally {
+            sock.close();
         }
     }
 

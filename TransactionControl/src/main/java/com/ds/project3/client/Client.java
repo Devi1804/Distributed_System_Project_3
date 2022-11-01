@@ -25,7 +25,8 @@ public class Client {
             sock = servSock.accept();
             InputStreamReader ip = new InputStreamReader(sock.getInputStream());
             BufferedReader br = new BufferedReader(ip);
-            System.out.println("data value received from tx controller: "+br.read());
+            String str = br.readLine();
+            System.out.println("data value received from tx controller: "+Integer.parseInt(str));
         }
     }
 }

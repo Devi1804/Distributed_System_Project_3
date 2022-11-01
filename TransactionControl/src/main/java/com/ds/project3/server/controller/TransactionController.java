@@ -8,42 +8,56 @@ import java.net.Socket;
 
 public class TransactionController {
     private static String path = "src/main/resources/logs/";
-    private static String data;
+    private static int data=0;
     public static void main(String[] args) throws IOException{
         log(LogManager.START);
         listen();
+        temp();
     }
 
     private static void listen() throws IOException{
+        Socket sock=null;
         try (ServerSocket servSock = new ServerSocket(2021)) {
             log(LogManager.START);
             System.out.println("[TC] started listening on 2021");
-            Socket sock = null;
             sock = servSock.accept();
             System.out.println("[TC] Connection Established!");
             InputStreamReader ip = new InputStreamReader(sock.getInputStream());
             BufferedReader br = new BufferedReader(ip);
             String str = br.readLine();
-            data=str;
-            sendDataGetLock(Integer.parseInt(data));
-            int countPrep=sendPrepare();
-            if(countPrep==2){
-                
-                int countCommit=sendCommit();
-                if(countCommit==2){
-                    data=data+1;
-                }
+            data = Integer.parseInt(str);
+       } finally {
+            sock.close();
+        }
+    }
+
+    private static void temp() throws IOException {
+        sendDataGetLock(data);
+        System.out.println("DATA1:"+data);
+        int countPrep=sendPrepare();
+        System.out.println("prepare count:"+countPrep);
+        System.out.println("DATA2:"+data);
+        if(countPrep==2){
+
+            int countCommit=sendCommit();
+            System.out.println("Commit count:"+countCommit);
+
+            if(countCommit==2){
+                data=data+1;
             }
-            sendresponse();
-       }
+            System.out.println("DATA3:"+data);
+
+        }
+        sendresponse();
     }
     private static void sendresponse() throws IOException{
         //Send commit/abort value command to node A
         try
         
-         (Socket sock = new Socket("localhost", 2022)) {
+         (Socket sock = new Socket("localhost", 2020)) {
             log("Unlock");
             PrintWriter pw = new PrintWriter(sock.getOutputStream(), true);
+            System.out.println("DATA FINAL::"+data);
             pw.println(data);
             }
             
@@ -98,18 +112,20 @@ public class TransactionController {
             pw.println(logop);
             }
         //listen to node A for ack();
+        Socket sock = null;
             try (ServerSocket servSock = new ServerSocket(2021)) {
-                Socket sock;
                 sock = servSock.accept();
                 InputStreamReader ip = new InputStreamReader(sock.getInputStream());
                 BufferedReader br = new BufferedReader(ip);
-                System.out.println("data value received from tx controller: "+br.read());
                 log(logack);                ///add wait for some time to reproduce failure of a Node
                 count+=1;
+                System.out.println("COMMIT COUNTA::"+count);
             }
         catch(Exception e){
             return count;
-        }
+        }finally {
+                sock.close();
+            }
         return count;
     }
     private static int NodeB(String logop, String logack) throws IOException{
@@ -119,18 +135,22 @@ public class TransactionController {
             PrintWriter pw = new PrintWriter(sock.getOutputStream(), true);
             pw.println(logop);
         }
-        //listen to node A for ack();
+        System.out.println("Noor chutia 1");
+        //listen to node B for ack();
+        Socket sock = null;
         try (ServerSocket servSock = new ServerSocket(2021)) {
-            Socket sock;
+            System.out.println("Noor chutia 2");
             sock = servSock.accept();
             InputStreamReader ip = new InputStreamReader(sock.getInputStream());
             BufferedReader br = new BufferedReader(ip);
-            System.out.println("data value received from tx controller: "+br.read());
             log(logack);
+            System.out.println("COMMIT COUNTB::"+count);
             count+=1;
         }
         catch(Exception e){
             return count;
+        }finally {
+            sock.close();
         }
         return count;
     }

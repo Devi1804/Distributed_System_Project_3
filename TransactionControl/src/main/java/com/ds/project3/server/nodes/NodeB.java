@@ -26,9 +26,9 @@ public class NodeB {
     }
 
     private static void listen() throws IOException {
-        try (ServerSocket servSock = new ServerSocket(2022)) {
+        Socket sock=null;
+        try (ServerSocket servSock = new ServerSocket(2023)) {
             System.out.println("[NODE_B] started listening on 2022");
-            Socket sock;
             sock = servSock.accept();
             System.out.println("[TC] Connection Established!");
             InputStreamReader ip = new InputStreamReader(sock.getInputStream());
@@ -45,11 +45,13 @@ public class NodeB {
                 log(LogManager.COMMIT_B);
                 send(LogManager.COMMIT_ACK_B);
             }
+        }finally {
+            sock.close();
         }
     }
 
     private static void log(String op) {
-        try (FileWriter fw = new FileWriter(path + "NodeA.txt", true);
+        try (FileWriter fw = new FileWriter(path + "NodeB.txt", true);
              BufferedWriter bw = new BufferedWriter(fw);
              PrintWriter out = new PrintWriter(bw)) {
             out.println(op);
