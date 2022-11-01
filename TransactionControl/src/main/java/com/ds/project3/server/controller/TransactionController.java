@@ -58,6 +58,7 @@ public class TransactionController {
             BufferedReader br = new BufferedReader(ip);
             String str = br.readLine();
             data = Integer.parseInt(str);
+            System.out.println("Calling GET_LOCK");
             sendDataGetLock(data);
         }catch(Exception e){
             System.out.println(e.toString());
@@ -115,12 +116,14 @@ public class TransactionController {
         // Send data to node A
         try (Socket sock = new Socket("localhost", 2022)) {
             PrintWriter pw = new PrintWriter(sock.getOutputStream(), true);
-            pw.println(data);
+            pw.println(LogManager.GET_LOCK);
         }
         // Send data to node B
         try (Socket sock = new Socket("localhost", 2023)) {
             PrintWriter pw = new PrintWriter(sock.getOutputStream(), true);
-            pw.println(data);
+            pw.println(LogManager.GET_LOCK);
+        }catch (Exception e){
+            e.printStackTrace();
         }
     }
 
@@ -147,27 +150,34 @@ public class TransactionController {
     private static int NodeA(String logop, String logack) throws IOException {
         int count = 0;
         // Send data to node A
-        try
-
-        (Socket sock = new Socket("localhost", 2022)) {
+        try (Socket sock = new Socket("localhost", 2022)) {
             log(logop);
+            System.out.println(logop);
             PrintWriter pw = new PrintWriter(sock.getOutputStream(), true);
             pw.println(logop);
+            System.out.println("noor chutia 1");
+        }catch (Exception e){
+            e.printStackTrace();
         }
         // listen to node A for ack();
         Socket sock = null;
+        String str="";
+        while(str.isEmpty()){
         try (ServerSocket servSock = new ServerSocket(2021)) {
+            System.out.println("noor chutia 2");
             sock = servSock.accept();
             InputStreamReader ip = new InputStreamReader(sock.getInputStream());
             BufferedReader br = new BufferedReader(ip);
             log(logack); /// add wait for some time to reproduce failure of a Node
+            str=logack;
             count += 1;
             System.out.println("COMMIT/PREPARE COUNTA::" + count);
         } catch (Exception e) {
+            e.printStackTrace();
             return count;
         } finally {
             sock.close();
-        }
+        }}
         return count;
     }
 
@@ -177,8 +187,11 @@ public class TransactionController {
             log(logop);
             PrintWriter pw = new PrintWriter(sock.getOutputStream(), true);
             pw.println(logop);
+        }catch (Exception e){
+            e.printStackTrace();
         }
         // listen to node B for ack();
+        System.out.println("noor chutia 3");
         Socket sock = null;
         try (ServerSocket servSock = new ServerSocket(2021)) {
             sock = servSock.accept();
@@ -188,6 +201,7 @@ public class TransactionController {
             System.out.println("COMMIT COUNTB::" + count);
             count += 1;
         } catch (Exception e) {
+            e.printStackTrace();
             return count;
         } finally {
             sock.close();
