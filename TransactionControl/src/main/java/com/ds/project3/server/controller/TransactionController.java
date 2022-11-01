@@ -5,13 +5,14 @@ import com.ds.project3.log.LogManager;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 public class TransactionController {
     private static String dir = System.getProperty("user.dir");
     private static String path = "/src/main/resources/logs/";
-    private static int data = 0;
+    private static int data = 10;
 
     private static final ScheduledExecutorService delayedTask =
             Executors.newSingleThreadScheduledExecutor();
@@ -164,7 +165,9 @@ public class TransactionController {
             BufferedReader br = new BufferedReader(ip);
             log(logack);
             count += 1;
-        } catch (Exception e) {
+        }  catch(SocketTimeoutException e) {
+            return count;
+        }catch (Exception e) {
             e.printStackTrace();
             return count;
         } finally {
@@ -192,7 +195,9 @@ public class TransactionController {
             BufferedReader br = new BufferedReader(ip);
             log(logack);
             count += 1;
-        } catch (Exception e) {
+        } catch(SocketTimeoutException e) {
+            return count;
+        }catch (Exception e) {
             e.printStackTrace();
             return count;
         } finally {

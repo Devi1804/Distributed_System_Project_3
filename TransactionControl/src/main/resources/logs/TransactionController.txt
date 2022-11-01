@@ -1,3 +1,0 @@
-START
-GET_LOCK
-LogManager.PREPARE_A
