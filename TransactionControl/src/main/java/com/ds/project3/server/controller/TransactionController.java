@@ -9,10 +9,10 @@ import java.net.Socket;
 public class TransactionController {
     private static String dir = System.getProperty("user.dir");
     private static String path = "/src/main/resources/logs/";
-    private static int data = 10;
+    public static int data = 10;
 
     public static void main(String[] args) throws IOException, InterruptedException {
-
+        new TransactionControllerLog();
         File dirpath = new File(dir + path);
         if (!dirpath.exists())
             dirpath.mkdir();
