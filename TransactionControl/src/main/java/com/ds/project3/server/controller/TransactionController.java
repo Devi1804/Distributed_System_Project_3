@@ -5,6 +5,7 @@ import com.ds.project3.log.LogManager;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.TimeUnit;
 
 public class TransactionController {
     private static String dir = System.getProperty("user.dir");
@@ -12,7 +13,7 @@ public class TransactionController {
     private static int data = 0;
 
     public static void main(String[] args) throws IOException {
-        
+
         File dirpath = new File(path);
 		if(!dirpath.exists())
 			dirpath.mkdir();
@@ -161,7 +162,7 @@ public class TransactionController {
             BufferedReader br = new BufferedReader(ip);
             log(logack); /// add wait for some time to reproduce failure of a Node
             count += 1;
-            System.out.println("COMMIT COUNTA::" + count);
+            System.out.println("COMMIT/PREPARE COUNTA::" + count);
         } catch (Exception e) {
             return count;
         } finally {
@@ -177,11 +178,9 @@ public class TransactionController {
             PrintWriter pw = new PrintWriter(sock.getOutputStream(), true);
             pw.println(logop);
         }
-        System.out.println("Noor chutia 1");
         // listen to node B for ack();
         Socket sock = null;
         try (ServerSocket servSock = new ServerSocket(2021)) {
-            System.out.println("Noor chutia 2");
             sock = servSock.accept();
             InputStreamReader ip = new InputStreamReader(sock.getInputStream());
             BufferedReader br = new BufferedReader(ip);

@@ -10,13 +10,12 @@ public class NodeA {
 
     private static String path = "src/main/resources/logs/";
 
-    public static void main(String [] args) throws IOException {
+    public static void main(String [] args) throws IOException, InterruptedException {
             while(true)
                 listen();
-
     }
 
-    public static void send(String op) throws IOException {
+    public static void send(String op) throws IOException, InterruptedException {
         try (Socket sock = new Socket("localhost", 2021)) {
             PrintWriter pw = new PrintWriter(sock.getOutputStream(), true);
             pw.println(op);
@@ -25,7 +24,7 @@ public class NodeA {
         }
     }
 
-    private static void listen() throws IOException {
+    private static void listen() throws IOException, InterruptedException {
         Socket sock=null;
         try (ServerSocket servSock = new ServerSocket(2022)) {
             System.out.println("[NODE_A] started listening on 2022");

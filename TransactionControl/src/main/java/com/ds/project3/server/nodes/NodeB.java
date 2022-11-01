@@ -5,17 +5,17 @@ import com.ds.project3.log.LogManager;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.sql.Timestamp;
 
 public class NodeB {
-
     private static String path = "src/main/resources/logs/";
+    private static Timestamp timestamp;
+    private static long allowedWait = 5050;
 
     public static void main(String [] args) throws IOException {
             while(true)
                 listen();
-
     }
-
     public static void send(String op) throws IOException {
         try (Socket sock = new Socket("localhost", 2021)) {
             PrintWriter pw = new PrintWriter(sock.getOutputStream(), true);
@@ -24,7 +24,6 @@ public class NodeB {
 
         }
     }
-
     private static void listen() throws IOException {
         Socket sock=null;
         try (ServerSocket servSock = new ServerSocket(2023)) {
@@ -34,12 +33,24 @@ public class NodeB {
             InputStreamReader ip = new InputStreamReader(sock.getInputStream());
             BufferedReader br = new BufferedReader(ip);
             String opcall=br.readLine();
-            if(opcall.contains("LOCK"))
+            System.out.println(opcall);
+            if(opcall.contains("LOCK")) {
                 log(LogManager.GET_LOCK);
+                timestamp = new Timestamp(System.currentTimeMillis());
+            }
             else if(opcall.contains("PREPARE"))
             {
-                log(LogManager.PREPARE_B);
-                send(LogManager.PREPARE_B_ACK);
+                Timestamp  tempTs = new Timestamp(System.currentTimeMillis());
+                System.out.println(timestamp);
+                System.out.println(tempTs);
+                long diff  = timestamp.getTime() - tempTs.getTime();
+                if(diff>allowedWait){
+                    //do nothing
+                } else{
+                    log(LogManager.PREPARE_B);
+                    send(LogManager.PREPARE_B_ACK);
+                }
+                System.out.println(diff);
             }
             else if(opcall.contains("COMMIT")){
                 log(LogManager.COMMIT_B);
