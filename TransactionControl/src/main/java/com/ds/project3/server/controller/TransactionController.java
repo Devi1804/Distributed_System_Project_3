@@ -5,19 +5,22 @@ import com.ds.project3.log.LogManager;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 public class TransactionController {
     private static String dir = System.getProperty("user.dir");
     private static String path = "/src/main/resources/logs/";
     private static int data = 0;
 
-    public static void main(String[] args) throws IOException {
+    private static final ScheduledExecutorService delayedTask =
+            Executors.newSingleThreadScheduledExecutor();
+
+    public static void main(String[] args) throws IOException, InterruptedException {
 
         File dirpath = new File(path);
 		if(!dirpath.exists())
 			dirpath.mkdir();
-        log(LogManager.START);
         String lastLogOp = readlogOp();
         System.out.println(lastLogOp);
         switch (lastLogOp) {
@@ -58,7 +61,6 @@ public class TransactionController {
             BufferedReader br = new BufferedReader(ip);
             String str = br.readLine();
             data = Integer.parseInt(str);
-            System.out.println("Calling GET_LOCK");
             sendDataGetLock(data);
         }catch(Exception e){
             System.out.println(e.toString());
@@ -68,48 +70,33 @@ public class TransactionController {
 
         }
     }
-
-    private static void temp() throws IOException {
-        System.out.println("DATA1:" + data);
+    private static void temp() throws IOException, InterruptedException {
         int countPrep = sendPrepare();
-        System.out.println("prepare count:" + countPrep);
-        System.out.println("DATA2:" + data);
         if (countPrep == 2) {
-
             int countCommit = sendCommit();
-            System.out.println("Commit count:" + countCommit);
-
             if (countCommit == 2) {
                 data = data + 1;
             }
-            System.out.println("DATA3:" + data);
-
         }
         sendresponse();
     }
-
     private static void docommit() throws IOException {
-
         data = data + 1;
-        System.out.println("DATA3:" + data);
-
         sendresponse();
     }
-
     private static void sendresponse() throws IOException {
         // Send commit/abort value command to node A
         try
 
         (Socket sock = new Socket("localhost", 2020)) {
-            log("Unlock");
+            log(LogManager.UNLOCK);
             PrintWriter pw = new PrintWriter(sock.getOutputStream(), true);
-            System.out.println("DATA FINAL::" + data);
             pw.println(data);
         }
 
     }
 
-    private static void sendDataGetLock(int data) throws IOException {
+    private static void sendDataGetLock(int data) throws IOException, InterruptedException {
 
         // write data to own log
         log(LogManager.GET_LOCK);
@@ -117,32 +104,41 @@ public class TransactionController {
         try (Socket sock = new Socket("localhost", 2022)) {
             PrintWriter pw = new PrintWriter(sock.getOutputStream(), true);
             pw.println(LogManager.GET_LOCK);
+            sock.close();
         }
+
+        Thread.sleep(1000);
         // Send data to node B
         try (Socket sock = new Socket("localhost", 2023)) {
             PrintWriter pw = new PrintWriter(sock.getOutputStream(), true);
             pw.println(LogManager.GET_LOCK);
+            sock.close();
         }catch (Exception e){
             e.printStackTrace();
         }
     }
 
-    private static int sendPrepare() throws IOException {
+    private static int sendPrepare() throws IOException, InterruptedException {
 
         int count = 0;
+        System.out.println("[TC] Preparing to send the message..");
         // Send data to node A
+        Thread.sleep(4000);
         count = count + NodeA("LogManager.PREPARE_A", "LogManager.PREPARE_A_ACK");
         // Send data to node B
         count = count + NodeB("LogManager.PREPARE_B", "LogManager.PREPARE_A_ACK");
         return count;
     }
 
-    private static int sendCommit() throws IOException {
+    private static int sendCommit() throws IOException, InterruptedException {
 
         int count = 0;
+        System.out.println("[TC] Committing A..");
         // Send data to node A
         count = count + NodeA("LogManager.COMMIT_A", "LogManager.COMMIT_A_ACK");
         // Send data to node B
+        System.out.println("[TC] Committing B..");
+        Thread.sleep(4000);
         count = count + NodeB("LogManager.COMMIT_B", "LogManager.COMMIT_B_ACK");
         return count;
     }
@@ -155,29 +151,25 @@ public class TransactionController {
             System.out.println(logop);
             PrintWriter pw = new PrintWriter(sock.getOutputStream(), true);
             pw.println(logop);
-            System.out.println("noor chutia 1");
         }catch (Exception e){
             e.printStackTrace();
         }
         // listen to node A for ack();
         Socket sock = null;
-        String str="";
-        while(str.isEmpty()){
+        int timeout = 5000;
         try (ServerSocket servSock = new ServerSocket(2021)) {
-            System.out.println("noor chutia 2");
+            servSock.setSoTimeout(timeout);
             sock = servSock.accept();
             InputStreamReader ip = new InputStreamReader(sock.getInputStream());
             BufferedReader br = new BufferedReader(ip);
-            log(logack); /// add wait for some time to reproduce failure of a Node
-            str=logack;
+            log(logack);
             count += 1;
-            System.out.println("COMMIT/PREPARE COUNTA::" + count);
         } catch (Exception e) {
             e.printStackTrace();
             return count;
         } finally {
             sock.close();
-        }}
+        }
         return count;
     }
 
@@ -191,14 +183,14 @@ public class TransactionController {
             e.printStackTrace();
         }
         // listen to node B for ack();
-        System.out.println("noor chutia 3");
         Socket sock = null;
+        int timeout = 5000;
         try (ServerSocket servSock = new ServerSocket(2021)) {
+            servSock.setSoTimeout(timeout);
             sock = servSock.accept();
             InputStreamReader ip = new InputStreamReader(sock.getInputStream());
             BufferedReader br = new BufferedReader(ip);
             log(logack);
-            System.out.println("COMMIT COUNTB::" + count);
             count += 1;
         } catch (Exception e) {
             e.printStackTrace();

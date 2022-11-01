@@ -28,4 +28,6 @@ public class LogManager {
 
     public static String COMMIT_ACK_B = "COMMIT_ACK_B";
 
+    public static String UNLOCK = "UNLOCK";
+
 }

@@ -9,6 +9,8 @@ public class Client {
 
     public static void main(String[] args) throws IOException {
         data = 10;
+        System.out.println("[CLIENT] Initial Data value: "+data);
+        System.out.println("[CLIENT] Client asks to increment data value..");
         send();
         listen();
     }

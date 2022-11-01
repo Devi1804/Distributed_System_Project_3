@@ -5,11 +5,16 @@ import com.ds.project3.log.LogManager;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.sql.Timestamp;
 
 public class NodeA {
 
     private static String dir = System.getProperty("user.dir");
     private static String path = "/src/main/resources/logs/";
+
+    private static Timestamp timestamp;
+
+    private static long allowedDelay = 5050;
 
     public static void main(String[] args) throws IOException, InterruptedException {
         File dirpath = new File(path);
@@ -31,7 +36,6 @@ public class NodeA {
     private static void listen() throws IOException, InterruptedException {
         Socket sock = null;
         System.out.println("[NODE_A] started listening on 2022");
-
             try (ServerSocket servSock = new ServerSocket(2022)) {
                 sock = servSock.accept();
                 System.out.println("[TC] Connection Established!");
@@ -43,17 +47,25 @@ public class NodeA {
                 if (opcall.contains("LOCK")) {
                     sock.close();
                     log(LogManager.GET_LOCK);
+                    timestamp = new Timestamp(System.currentTimeMillis());
                 }
                 else if (opcall.contains("PREPARE")) {
-                    System.out.println("received prepare");
-                    log(LogManager.PREPARE_A);
-                    send(LogManager.PREPARE_A_ACK);
+                    Timestamp ts = new Timestamp(System.currentTimeMillis());
+                    long diff = ts.getTime() - timestamp.getTime();
+                    if(diff<=allowedDelay) {
+                        log(LogManager.PREPARE_A);
+                        send(LogManager.PREPARE_A_ACK);
+                    }else{
+                        //do nothing
+                    }
                     sock.close();
                 } else if (opcall.contains("COMMIT")) {
-                    log(LogManager.COMMIT_A);
-                    send(LogManager.COMMIT_ACK_A);
+                    log(LogManager.COMMIT_B);
+                    send(LogManager.COMMIT_ACK_B);
                     sock.close();
                 }
+            }finally {
+                sock.close();
             }
     }
 
