@@ -22,8 +22,10 @@ public class NodeB {
         if (!dirpath.exists())
             dirpath.mkdir();
         String lastLogOp = readlogOp();
+        System.out.println(lastLogOp);
+        System.out.println(lastLogOp.isEmpty());
         if(!lastLogOp.isEmpty()){
-            new NodeALog();
+            new NodeBLog();
         }
         while (true)
             listen();
@@ -50,7 +52,7 @@ public class NodeB {
             String opcall = br.readLine();
             System.out.println(opcall);
             sock.close();
-            if (opcall.contains("LOCK")) {
+            if (opcall.contains("GET_LOCK")) {
                 sock.close();
                 log(LogManager.GET_LOCK);
                 timestamp = new Timestamp(System.currentTimeMillis());
@@ -61,15 +63,17 @@ public class NodeB {
                 if (diff <= allowedDelay) {
                     log(LogManager.PREPARE_B);
                     send(LogManager.PREPARE_B_ACK);
-                } else {
-                    // do nothing
                 }
                 sock.close();
             } else if (opcall.contains("COMMIT")) {
                 log(LogManager.COMMIT_B);
-                System.out.println("[NODE B] data value:"+data+1);
+                data +=1;
+                System.out.println("[NODE B] data value:"+data);
                 send(LogManager.COMMIT_ACK_B);
                 sock.close();
+                log(LogManager.UNLOCK);
+            }else {
+                log(LogManager.UNLOCK);
             }
         } finally {
             sock.close();

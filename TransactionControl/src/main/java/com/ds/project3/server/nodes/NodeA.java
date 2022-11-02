@@ -49,7 +49,7 @@ public class NodeA {
             String opcall = br.readLine();
             sock.close();
             System.out.println(opcall);
-            if (opcall.contains("LOCK")) {
+            if (opcall.contains("GET_LOCK")) {
                 sock.close();
                 log(LogManager.GET_LOCK);
                 timestamp = new Timestamp(System.currentTimeMillis());
@@ -60,15 +60,17 @@ public class NodeA {
                 if (diff <= allowedDelay) {
                     log(LogManager.PREPARE_A);
                     send(LogManager.PREPARE_A_ACK);
-                } else {
-                    // do nothing
                 }
                 sock.close();
             } else if (opcall.contains("COMMIT")) {
-                log(LogManager.COMMIT_B);
-                System.out.println("[NODE A] data value:"+data+1);
-                send(LogManager.COMMIT_ACK_B);
+                log(LogManager.COMMIT_A);
+                data +=1;
+                System.out.println("[NODE A] data value:"+data);
+                send(LogManager.COMMIT_ACK_A);
                 sock.close();
+                log(LogManager.UNLOCK);
+            } else {
+                log(LogManager.UNLOCK);
             }
         } finally {
             sock.close();
@@ -91,7 +93,7 @@ public class NodeA {
         return lastOp;
     }
 
-    private static void log(String op) {
+    static void log(String op) {
         try (FileWriter fw = new FileWriter(dir + path + "NodeA.txt", true);
                 BufferedWriter bw = new BufferedWriter(fw);
                 PrintWriter out = new PrintWriter(bw)) {

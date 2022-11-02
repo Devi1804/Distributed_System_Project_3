@@ -9,19 +9,14 @@ import java.net.Socket;
 
 public class TransactionControllerLog implements Runnable{
 
-    Thread t;
-    TransactionControllerLog() {
-      t = new Thread();
-      t.start();
-   }
-   public void run() {
-      try {
-         listen();
-      }  catch (Exception e) {
+    Thread runner;
+    public TransactionControllerLog() {
+        this.runner = new Thread(this);
+        this.runner.start();
     }
-    }
-private static void listen() throws IOException {
-        Socket sock = null;
+   @Override
+    public void run()  {
+        Socket sock;
         while(true){
         try (ServerSocket servSock = new ServerSocket(2031)) {
             sock = servSock.accept();

@@ -1,6 +1,7 @@
 package com.ds.project3.server.controller;
 
 import com.ds.project3.log.LogManager;
+import sun.rmi.runtime.Log;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -12,7 +13,7 @@ public class TransactionController {
     public static int data = 10;
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        new TransactionControllerLog();
+        TransactionControllerLog tr = new TransactionControllerLog();
         File dirpath = new File(dir + path);
         if (!dirpath.exists())
             dirpath.mkdir();
@@ -54,7 +55,7 @@ public class TransactionController {
                 listen();
                 temp();
         }
-        deletefile();
+        Thread.sleep(200000);
     }
 
     private static void listen() throws IOException {
@@ -68,7 +69,7 @@ public class TransactionController {
             BufferedReader br = new BufferedReader(ip);
             String str = br.readLine();
             data = Integer.parseInt(str);
-            sendDataGetLock(data);
+            sendDataGetLock(data,LogManager.GET_LOCK);
         } catch (Exception e) {
             System.out.println(e.toString());
         } finally {
@@ -81,9 +82,9 @@ public class TransactionController {
         int countPrep = sendPrepare();
         if (countPrep == 2) {
             int countCommit = sendCommit();
-            if (countCommit == 2) {
-                data = data + 1;
-            }
+            data = data + 1;
+        } else{
+            sendDataGetLock(data,LogManager.UNLOCK);
         }
         sendresponse();
     }
@@ -105,14 +106,14 @@ public class TransactionController {
 
     }
 
-    private static void sendDataGetLock(int data) throws IOException, InterruptedException {
+    private static void sendDataGetLock(int data,String op) throws IOException, InterruptedException {
 
         // write data to own log
-        log(LogManager.GET_LOCK);
+        log(op);
         // Send data to node A
         try (Socket sock = new Socket("localhost", 2022)) {
             PrintWriter pw = new PrintWriter(sock.getOutputStream(), true);
-            pw.println(LogManager.GET_LOCK);
+            pw.println(op);
             sock.close();
         }
 
@@ -135,7 +136,7 @@ public class TransactionController {
         Thread.sleep(4000);
         count = count + NodeA("LogManager.PREPARE_A", "LogManager.PREPARE_A_ACK");
         // Send data to node B
-        count = count + NodeB("LogManager.PREPARE_B", "LogManager.PREPARE_A_ACK");
+        count = count + NodeB("LogManager.PREPARE_B", "LogManager.PREPARE_B_ACK");
         return count;
     }
 
@@ -231,14 +232,4 @@ public class TransactionController {
         }
         return lastOp;
     }
-
-    private static void deletefile() throws IOException {
-        File file = new File(dir + path + "TransactionController.txt");
-        if (file.exists()) {
-            file.delete();
-            file.createNewFile();
-            return;
-        }
-    }
-
 }
