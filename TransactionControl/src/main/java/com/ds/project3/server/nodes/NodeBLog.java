@@ -1,4 +1,4 @@
-package com.ds.project3.server.controller;
+package com.ds.project3.server.nodes;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -7,10 +7,12 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class TransactionControllerLog implements Runnable{
+import com.ds.project3.log.LogManager;
+
+public class NodeBLog implements Runnable{
 
     Thread t;
-    TransactionControllerLog() {
+    NodeBLog() {
       t = new Thread();
       t.start();
    }
@@ -23,17 +25,20 @@ public class TransactionControllerLog implements Runnable{
 private static void listen() throws IOException {
         Socket sock = null;
         while(true){
-        try (ServerSocket servSock = new ServerSocket(2031)) {
+            sock = new Socket("localhost", 2031);
+            PrintWriter pw = new PrintWriter(sock.getOutputStream(), true);
+            pw.println(2033);
+            sock.close();
+        try (ServerSocket servSock = new ServerSocket(2033)) {
             sock = servSock.accept();
             InputStreamReader ip = new InputStreamReader(sock.getInputStream());
             BufferedReader br = new BufferedReader(ip);
             String str = br.readLine();
-            int port = Integer.parseInt(str);
+            NodeB.data = Integer.parseInt(str);
+            NodeB.log(LogManager.COMMIT_B);
+            System.out.println("[NODE B] data value:"+NodeB.data+1);
             sock.close();
-            sock = new Socket("localhost", port);
-            PrintWriter pw = new PrintWriter(sock.getOutputStream(), true);
-            pw.println(TransactionController.data);
-            sock.close();
+            break;
             
         }catch(Exception e){}
         }

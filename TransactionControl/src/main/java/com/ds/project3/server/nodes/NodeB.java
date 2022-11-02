@@ -13,6 +13,7 @@ public class NodeB {
     private static String path = "/src/main/resources/logs/";
 
     private static Timestamp timestamp;
+    public static int data = 10;
 
     private static long allowedDelay = 5050;
 
@@ -20,6 +21,10 @@ public class NodeB {
         File dirpath = new File(path);
         if (!dirpath.exists())
             dirpath.mkdir();
+        String lastLogOp = readlogOp();
+        if(!lastLogOp.isEmpty()){
+            new NodeALog();
+        }
         while (true)
             listen();
 
@@ -62,6 +67,7 @@ public class NodeB {
                 sock.close();
             } else if (opcall.contains("COMMIT")) {
                 log(LogManager.COMMIT_B);
+                System.out.println("[NODE B] data value:"+data+1);
                 send(LogManager.COMMIT_ACK_B);
                 sock.close();
             }
@@ -70,7 +76,23 @@ public class NodeB {
         }
     }
 
-    private static void log(String op) {
+    private static String readlogOp() {
+        String lastOp = "";
+        try {
+            FileReader fr = new FileReader(dir + path + "NodeB.txt");
+            BufferedReader br = new BufferedReader(fr);
+
+            String line = "";
+            while ((line = br.readLine()) != null) {
+                lastOp = line;
+            }
+            br.close();
+        } catch (IOException e) {
+        }
+        return lastOp;
+    }
+
+    public static void log(String op) {
         try (FileWriter fw = new FileWriter(dir + path + "NodeB.txt", true);
                 BufferedWriter bw = new BufferedWriter(fw);
                 PrintWriter out = new PrintWriter(bw)) {
